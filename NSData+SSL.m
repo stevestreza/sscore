@@ -34,8 +34,13 @@ const void* LBSHA1ForBytes(const char *bytes, unsigned long long len){
 	unsigned long long len = [self length];
 	const void *bytes = [self bytes];
 	
-	return [NSData dataWithBytes:LBSHA1ForBytes(bytes,len) 
-						  length:LBSHADigestLength];	
+	const void *sha1 = LBSHA1ForBytes(bytes,len);
+	
+	NSData *data = [NSData dataWithBytes:sha1
+								  length:LBSHADigestLength];	
+	free(sha1);
+	
+	return data;
 }
 
 - (NSString *)hexval
