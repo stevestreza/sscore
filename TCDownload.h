@@ -25,7 +25,16 @@
 
 #import <Foundation/Foundation.h>
 
+#if TargetIsMobileDevice
+#define kTCDownloadRunLoopMode NSDefaultRunLoopMode
+#else
+#define kTCDownloadRunLoopMode NSConnectionReplyMode
+#endif
+
 @class TCDownload;
+
+#define kTCDownloadDidBeginDownloadNotification  @"kTCDownloadDidBeginDownloadNotification"
+#define kTCDownloadDidFinishDownloadNotification @"kTCDownloadDidFinishDownloadNotification"
 
 @protocol TCDownloadDelegate
 
@@ -60,10 +69,19 @@ typedef enum {
 	NSData *mRequestData;
 	NSData *mData;
 	
+	//the run loop of the calling thread
+	NSRunLoop *mRunLoop;
+	
+	BOOL mStarted;
+	BOOL mActive;
 	BOOL mFinished;
+	BOOL mSynchronous;
+	
+	id mUserInfo;
 }
 
-@property (assign) id<TCDownloadDelegate> delegate;
+@property (retain) id userInfo;
+@property (retain) id<TCDownloadDelegate> delegate;
 @property (readonly) NSURL *url;
 @property (readonly) NSURLRequest  *request;
 @property (readonly) NSHTTPURLResponse *response;
@@ -71,7 +89,10 @@ typedef enum {
 @property (retain) NSData *requestData;
 @property TCDownloadRequestType requestType;
 @property (readonly) TCDownloadSize expectedSize;
+@property (readonly) double percentComplete;
 @property (readonly, getter=isFinished) BOOL finished;
+@property (readonly, getter=isActive) BOOL active;
+@property (readonly, getter=hasStarted) BOOL started;
 
 -(id)initWithURL:(NSURL *)url;
 -(BOOL)cacheToPath:(NSString *)path;
@@ -79,6 +100,12 @@ typedef enum {
 -(void)send:(BOOL)async;
 -(void)cancel;
 
+-(double)percentComplete;
+
 +(NSData *)loadResourceDataForURL:(NSURL *)url;
 +(NSString *)loadResourceStringForURL:(NSURL *)url encoding:(NSStringEncoding)encoding;
++(void)setScheduleAtHead:(BOOL)head;
+
+-(void)setValue:(id)value forHeader:(NSString *)headerKey;
+
 @end
