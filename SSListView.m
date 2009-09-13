@@ -85,7 +85,7 @@
 
 		NSView *superview = [self superview];
 		if(!superview) return;
-		NSUInteger index = [[[self superview] subviews] indexOfObject:self];
+//		NSUInteger index = [[[self superview] subviews] indexOfObject:self];
 		
 		mParentScrollView = [[NSScrollView alloc] initWithFrame:[self frame]];
 		[mParentScrollView setDrawsBackground:NO];
@@ -111,7 +111,7 @@
 
 -(void)mouseUp:(NSEvent *)e{
 	NSPoint location = [self convertPoint:[e locationInWindow] fromView:nil];
-//	self.selectedRow = [self indexOfPoint:location];
+	self.selectedRow = [self indexOfPoint:location];
 }
 
 -(NSUInteger)indexOfPoint:(NSPoint)pt{
