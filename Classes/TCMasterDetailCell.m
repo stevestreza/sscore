@@ -19,12 +19,12 @@ static NSDictionary *sSecondaryAttributes = nil;
 - (void)drawInteriorWithFrame:(NSRect)cellFrame inView:(NSView *)controlView{
 	id obj = [self objectValue];
 	
-	NSString *primaryString = [obj valueForKey:primaryKey];
+	NSString *primaryString = [obj valueForKeyPath:primaryKey];
 	if(![primaryString isKindOfClass:[NSString class]]){
 		primaryString = [primaryString description];
 	}
 	
-	NSString *secondaryString = [obj valueForKey:secondaryKey];
+	NSString *secondaryString = [obj valueForKeyPath:secondaryKey];
 	if(![secondaryString isKindOfClass:[NSString class]]){
 		secondaryString = [secondaryString description];
 	}
