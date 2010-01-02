@@ -93,6 +93,7 @@ typedef enum {
 @property (readonly, getter=isFinished) BOOL finished;
 @property (readonly, getter=isActive) BOOL active;
 @property (readonly, getter=hasStarted) BOOL started;
+@property (retain) NSRunLoop *runLoop;
 
 -(id)initWithURL:(NSURL *)url;
 -(BOOL)cacheToPath:(NSString *)path;

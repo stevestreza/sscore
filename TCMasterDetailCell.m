@@ -108,7 +108,6 @@ static NSGradient *sGradient = nil;
 	id oldObjectValue = [self objectValue];
 	if (object != oldObjectValue) {
 		[object retain];
-		[oldObjectValue release];
 		[super setObjectValue:[NSValue valueWithNonretainedObject:object]];
 	}
 }

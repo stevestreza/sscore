@@ -40,7 +40,8 @@ finished=mFinished,
 expectedSize=mExpectedSize,
 active=mActive, 
 started=mStarted, 
-userInfo=mUserInfo;
+userInfo=mUserInfo,
+runLoop=mRunLoop;
 
 static NSThread *sSharedClientThread = nil;
 static NSRunLoop *sSharedClientRunLoop = nil;
@@ -244,7 +245,9 @@ static BOOL sScheduleAtHead = NO;
 //	[mConnection unscheduleFromRunLoop:[NSRunLoop mainRunLoop] forMode:kTCDownloadRunLoopMode];
 	
 //	[mRunLoop release];
-//	mRunLoop = [[NSRunLoop currentRunLoop] retain];
+	if(!mRunLoop){
+		mRunLoop = [[NSRunLoop currentRunLoop] retain];
+	}
 	
 	[mConnection scheduleInRunLoop:mRunLoop forMode:kTCDownloadRunLoopMode];
 	
@@ -275,7 +278,7 @@ static BOOL sScheduleAtHead = NO;
 -(void)blockUntilFinished{
 	while(!mFinished){
 //		NSLog(@"Tick");
-		[mRunLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];		
+		[mRunLoop runMode:kTCDownloadRunLoopMode beforeDate:[NSDate distantFuture]];		
 	}
 }
 
@@ -303,6 +306,8 @@ static BOOL sScheduleAtHead = NO;
 	[objectData appendData:theData];
 	[self didChangeValueForKey:@"data"];
 
+//	NSLog(@"Received %i/%i bytes: %0.1f%% complete", [theData length], [objectData length],(100 * [objectData length]) / (double)[self expectedSize]);
+
 	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadReceivedData:)]){
 		[mDelegate downloadReceivedData:self];
 	}
@@ -313,6 +318,7 @@ static BOOL sScheduleAtHead = NO;
 	
 	[[NSNotificationCenter defaultCenter] postNotificationName:kTCDownloadDidFinishDownloadNotification object:self];
 
+//	NSLog(@"Calling delegate that we're done: %@",mDelegate);
 	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadFinished:)]){
 		[mDelegate downloadFinished:self];
 	}
