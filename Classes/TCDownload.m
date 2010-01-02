@@ -31,6 +31,7 @@
 @synthesize 
 delegate=mDelegate, 
 url=mURL, 
+timeoutInterval=mTimeoutInterval,
 request=mRequest, 
 response=mResponse,  
 data=mData,  
@@ -204,6 +205,10 @@ static BOOL sScheduleAtHead = NO;
 	
 	if(mRequestData){
 		[request setHTTPBody:mRequestData];
+	}
+	
+	if(mTimeoutInterval){
+		[request setTimeoutInterval:mTimeoutInterval];
 	}
 	
 	mRequest = request;

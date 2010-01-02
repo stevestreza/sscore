@@ -63,6 +63,8 @@ typedef enum {
 	NSDictionary *mHeaders;
 	NSError *mError;
 	
+	NSTimeInterval mTimeoutInterval;
+	
 	TCDownloadRequestType mRequestType;
 	TCDownloadSize mExpectedSize;
 	
@@ -83,6 +85,7 @@ typedef enum {
 @property (retain) id userInfo;
 @property (retain) id<TCDownloadDelegate> delegate;
 @property (readonly) NSURL *url;
+@property (assign) NSTimeInterval timeoutInterval;
 @property (readonly) NSURLRequest  *request;
 @property (readonly) NSHTTPURLResponse *response;
 @property (readonly) NSData *data;
