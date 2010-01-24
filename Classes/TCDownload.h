@@ -112,4 +112,11 @@ typedef enum {
 
 -(void)setValue:(id)value forHeader:(NSString *)headerKey;
 
+-(NSOperation *)downloadOperation;
+
+//delegate methods
+-(void)downloadHadError:(NSError *)error;
+-(void)downloadReceivedData;
+-(void)downloadFinished;
+-(BOOL)downloadShouldRedirectToURL:(NSURL *)aURL;
 @end

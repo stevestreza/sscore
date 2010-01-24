@@ -166,7 +166,7 @@ static BOOL sScheduleAtHead = NO;
 }
 
 -(void)setValue:(id)value forHeader:(NSString *)headerKey{
-	if(mHeaders){
+	if(!mHeaders){
 		mHeaders = [[NSMutableDictionary alloc] init];
 	}
 	[mHeaders setValue:value forKey:headerKey];
@@ -281,7 +281,7 @@ static BOOL sScheduleAtHead = NO;
 }
 
 -(void)blockUntilFinished{
-	while(!mFinished){
+	while(![self isFinished]){
 //		NSLog(@"Tick");
 		[mRunLoop runMode:kTCDownloadRunLoopMode beforeDate:[NSDate distantFuture]];		
 	}
@@ -299,9 +299,7 @@ static BOOL sScheduleAtHead = NO;
 	[[NSNotificationCenter defaultCenter] postNotificationName:kTCDownloadDidFinishDownloadNotification object:self];
 
 	NSLog(@"TCDownload Error: %@",mError);
-	if(mDelegate && [mDelegate respondsToSelector:@selector(download:hadError:)]){
-		[mDelegate download:self hadError:deadError];
-	}	
+	[self downloadHadError:mError];
 }
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)theData{
@@ -312,10 +310,7 @@ static BOOL sScheduleAtHead = NO;
 	[self didChangeValueForKey:@"data"];
 
 //	NSLog(@"Received %i/%i bytes: %0.1f%% complete", [theData length], [objectData length],(100 * [objectData length]) / (double)[self expectedSize]);
-
-	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadReceivedData:)]){
-		[mDelegate downloadReceivedData:self];
-	}
+	[self downloadReceivedData];
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection{
@@ -324,13 +319,37 @@ static BOOL sScheduleAtHead = NO;
 	[[NSNotificationCenter defaultCenter] postNotificationName:kTCDownloadDidFinishDownloadNotification object:self];
 
 //	NSLog(@"Calling delegate that we're done: %@",mDelegate);
-	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadFinished:)]){
-		[mDelegate downloadFinished:self];
-	}
-
+	[self downloadFinished];
+	
 	[self willChangeValueForKey:@"active"];
 	mActive = NO;
 	[self  didChangeValueForKey:@"active"];
+}
+
+-(void)downloadHadError:(NSError *)error{
+	if(mDelegate && [mDelegate respondsToSelector:@selector(download:hadError:)]){
+		[mDelegate download:self hadError:error];
+	}
+}
+
+-(void)downloadReceivedData{
+	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadReceivedData:)]){
+		[mDelegate downloadReceivedData:self];
+	}	
+}	
+
+-(void)downloadFinished{
+	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadFinished:)]){
+		[mDelegate downloadFinished:self];
+	}	
+}
+
+-(BOOL)downloadShouldRedirectToURL:(NSURL *)aURL{
+	BOOL shouldReturn = YES;
+	if(mDelegate && [mDelegate respondsToSelector:@selector(download:shouldRedirectToURL:)]){
+		shouldReturn = [mDelegate download:self shouldRedirectToURL:aURL];
+	}	
+	return shouldReturn;
 }
 
 - (void)connection:(NSURLConnection *)connection
@@ -343,17 +362,15 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite{
 -(NSURLRequest *)connection:(NSURLConnection *)connection
             willSendRequest:(NSURLRequest *)request
            redirectResponse:(NSURLResponse *)redirectResponse{
-	BOOL shouldReturn = YES;
-	
-	if(mDelegate && [mDelegate respondsToSelector:@selector(download:shouldRedirectToURL:)]){
-		shouldReturn = [mDelegate download:self shouldRedirectToURL:[request URL]];
-	}
-	//	TNSWLog(@"sending request %@",request);
+	BOOL shouldReturn = [self downloadShouldRedirectToURL:[request URL]];
+//	TNSWLog(@"sending request %@",request);
 	return (shouldReturn ? request : nil);
 }
 
 
 -(void)connection:(NSURLConnection *)conn didReceiveResponse:(NSHTTPURLResponse *)response{
+	mResponse = [response retain];
+	
 	if([response statusCode] == 303 && [[response allHeaderFields] valueForKey:@"Location"]){
 		NSLog(@"need a redirect!");
 		return;
@@ -378,6 +395,17 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite{
 
 -(double)percentComplete{
 	return self.data.length / (double)self.expectedSize;
+}
+
+-(NSOperation *)downloadOperation{
+	return [[[NSInvocationOperation alloc] initWithTarget:self
+												 selector:@selector(_operationSend)
+												   object:nil] autorelease];
+}
+
+-(void)_operationSend{
+	[self send:NO];
+	NSLog(@"Operation finished! Bool? %i", (int)[self isFinished]);
 }
 
 -(void)dealloc{
