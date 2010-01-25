@@ -38,6 +38,7 @@
 
 @protocol TCDownloadDelegate
 
+-(void)downloadDidBegin:(TCDownload *)download;
 -(void)downloadReceivedData:(TCDownload *)download;
 -(void)downloadFinished:(TCDownload *)download;
 -(BOOL)download:(TCDownload *)download shouldRedirectToURL:(NSURL *)url;
@@ -115,6 +116,7 @@ typedef enum {
 -(NSOperation *)downloadOperation;
 
 //delegate methods
+-(void)downloadDidBegin;
 -(void)downloadHadError:(NSError *)error;
 -(void)downloadReceivedData;
 -(void)downloadFinished;

@@ -338,6 +338,12 @@ static BOOL sScheduleAtHead = NO;
 	}	
 }	
 
+-(void)downloadDidBegin{
+	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadDidBegin:)]){
+		[mDelegate downloadDidBegin:self];
+	}	
+}
+
 -(void)downloadFinished{
 	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadFinished:)]){
 		[mDelegate downloadFinished:self];
@@ -364,6 +370,7 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite{
            redirectResponse:(NSURLResponse *)redirectResponse{
 	BOOL shouldReturn = [self downloadShouldRedirectToURL:[request URL]];
 //	TNSWLog(@"sending request %@",request);
+	[self downloadDidBegin];
 	return (shouldReturn ? request : nil);
 }
 
