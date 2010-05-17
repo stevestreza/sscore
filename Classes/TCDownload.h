@@ -25,7 +25,7 @@
 
 #import <Foundation/Foundation.h>
 
-#if TargetIsMobileDevice
+#if TARGET_OS_IPHONE
 #define kTCDownloadRunLoopMode NSDefaultRunLoopMode
 #else
 #define kTCDownloadRunLoopMode NSConnectionReplyMode
