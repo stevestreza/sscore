@@ -34,7 +34,8 @@ url=mURL,
 timeoutInterval=mTimeoutInterval,
 request=mRequest, 
 response=mResponse,  
-data=mData,  
+data=mData, 
+error=mError,
 requestType=mRequestType,  
 requestData=mRequestData,  
 finished=mFinished,
@@ -179,6 +180,12 @@ static BOOL sScheduleAtHead = NO;
 			break;
 		case TCDownloadRequestTypePOST:
 			return @"POST";
+			break;
+		case TCDownloadRequestTypePUT:
+			return @"PUT";
+			break;
+		case TCDownloadRequestTypeDELETE:
+			return @"DELETE";
 			break;
 		case TCDownloadRequestTypeHEAD:
 			return @"HEAD";

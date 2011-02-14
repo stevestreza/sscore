@@ -51,7 +51,9 @@ typedef long long TCDownloadSize;
 typedef enum {
 	TCDownloadRequestTypeGET,
 	TCDownloadRequestTypePOST,
-	TCDownloadRequestTypeHEAD
+	TCDownloadRequestTypePUT,
+	TCDownloadRequestTypeDELETE,
+	TCDownloadRequestTypeHEAD,
 } TCDownloadRequestType;
 
 @interface TCDownload : NSObject {
@@ -90,6 +92,7 @@ typedef enum {
 @property (readonly) NSURLRequest  *request;
 @property (readonly) NSHTTPURLResponse *response;
 @property (readonly) NSData *data;
+@property (readonly) NSError *error;
 @property (retain) NSData *requestData;
 @property TCDownloadRequestType requestType;
 @property (readonly) TCDownloadSize expectedSize;
