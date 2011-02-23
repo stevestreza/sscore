@@ -43,7 +43,17 @@ expectedSize=mExpectedSize,
 active=mActive, 
 started=mStarted, 
 userInfo=mUserInfo,
-runLoop=mRunLoop;
+runLoop=mRunLoop,
+body=mBody;
+
+#if NS_BLOCKS_AVAILABLE
+@synthesize didBeginHandler=mDidBeginHandler;
+@synthesize didReceiveDataHandler=mDidReceiveDataHandler;
+@synthesize didFinishHandler=mDidFinishHandler;
+@synthesize shouldRedirectHandler=mShouldRedirectHandler;
+@synthesize didErrorHandler=mDidErrorHandler;
+#endif
+
 
 static NSThread *sSharedClientThread = nil;
 static NSRunLoop *sSharedClientRunLoop = nil;
@@ -298,6 +308,33 @@ static BOOL sScheduleAtHead = NO;
 	[mConnection cancel];
 }
 
+-(void)parseData{
+	id body = self.data;
+	
+	NSString *contentType = [[[mResponse allHeaderFields] objectForKey:@"Content-Type"] lowercaseString];
+	if([contentType isEqualToString:@"application/json"]){
+		Class CJSONDeserializer = NSClassFromString(@"CJSONDeserializer");
+		if(CJSONDeserializer){
+			NSError *error = nil;
+			id deserializer = [CJSONDeserializer deserializer];
+			[deserializer setNullObject:nil];
+			NSDictionary *dict = [deserializer deserialize:body error:&error];
+			if(dict && !error){
+				NSLog(@"JSON parsed! %@", dict);
+				body = dict;
+				goto done;
+			}else if(error){
+				NSLog(@"Couldn't parse JSON: %@",error);
+			}
+		}
+	}
+	
+done:
+	[body retain];
+	[mBody release];
+	mBody = body;
+}
+
 - (void)connection:(NSURLConnection*)connection
   didFailWithError:(NSError*)deadError{
 	mError = [deadError copy];
@@ -321,6 +358,7 @@ static BOOL sScheduleAtHead = NO;
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection{
+	[self parseData];
 	mFinished = YES;
 	
 	[[NSNotificationCenter defaultCenter] postNotificationName:kTCDownloadDidFinishDownloadNotification object:self];
@@ -337,24 +375,48 @@ static BOOL sScheduleAtHead = NO;
 	if(mDelegate && [mDelegate respondsToSelector:@selector(download:hadError:)]){
 		[mDelegate download:self hadError:error];
 	}
+
+#if NS_BLOCKS_AVAILABLE
+	if(mDidErrorHandler){
+		mDidErrorHandler(self, error);
+	}
+#endif
 }
 
 -(void)downloadReceivedData{
 	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadReceivedData:)]){
 		[mDelegate downloadReceivedData:self];
 	}	
+
+#if NS_BLOCKS_AVAILABLE
+	if(mDidReceiveDataHandler){
+		mDidReceiveDataHandler(self);
+	}
+#endif
 }	
 
 -(void)downloadDidBegin{
 	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadDidBegin:)]){
 		[mDelegate downloadDidBegin:self];
 	}	
+	
+#if NS_BLOCKS_AVAILABLE
+	if(mDidBeginHandler){
+		mDidBeginHandler(self);
+	}
+#endif
 }
 
 -(void)downloadFinished{
 	if(mDelegate && [mDelegate respondsToSelector:@selector(downloadFinished:)]){
 		[mDelegate downloadFinished:self];
 	}	
+
+#if NS_BLOCKS_AVAILABLE
+	if(mDidFinishHandler){
+		mDidFinishHandler(self);
+	}
+#endif
 }
 
 -(BOOL)downloadShouldRedirectToURL:(NSURL *)aURL{
@@ -362,6 +424,13 @@ static BOOL sScheduleAtHead = NO;
 	if(mDelegate && [mDelegate respondsToSelector:@selector(download:shouldRedirectToURL:)]){
 		shouldReturn = [mDelegate download:self shouldRedirectToURL:aURL];
 	}	
+	
+#if NS_BLOCKS_AVAILABLE
+	if(mShouldRedirectHandler){
+		shouldReturn = mShouldRedirectHandler(self, aURL);
+	}
+#endif
+	
 	return shouldReturn;
 }
 
@@ -424,6 +493,23 @@ totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite{
 
 -(void)dealloc{
 	mDelegate = nil;
+	
+#if NS_BLOCKS_AVAILABLE
+	[mDidBeginHandler release];
+	mDidBeginHandler = nil;
+	
+	[mDidFinishHandler release];
+	mDidFinishHandler = nil;
+	
+	[mDidReceiveDataHandler release];
+	mDidReceiveDataHandler = nil;
+	
+	[mDidErrorHandler release];
+	mDidErrorHandler = nil;
+	
+	[mShouldRedirectHandler release];
+	mShouldRedirectHandler = nil;
+#endif
 	
 	[mURL release];
 	mURL = nil;

@@ -46,6 +46,12 @@
 
 @end
 
+#if NS_BLOCKS_AVAILABLE
+typedef void (^TCDownloadHandler)(TCDownload *download);
+typedef BOOL (^TCDownloadRedirectHandler)(TCDownload *download, NSURL *url);
+typedef void (^TCDownloadErrorHandler)(TCDownload *download, NSError *error);
+#endif
+
 typedef long long TCDownloadSize;
 
 typedef enum {
@@ -58,6 +64,14 @@ typedef enum {
 
 @interface TCDownload : NSObject {
 	id<TCDownloadDelegate> mDelegate;
+	
+#if NS_BLOCKS_AVAILABLE
+	TCDownloadHandler mDidBeginHandler;
+	TCDownloadHandler mDidReceiveDataHandler;
+	TCDownloadHandler mDidFinishHandler;
+	TCDownloadRedirectHandler mShouldRedirectHandler;
+	TCDownloadErrorHandler mDidErrorHandler;
+#endif
 	
 	NSURL *mURL;
 	NSURLRequest *mRequest;
@@ -73,6 +87,7 @@ typedef enum {
 	
 	NSData *mRequestData;
 	NSData *mData;
+	id mBody;
 	
 	//the run loop of the calling thread
 	NSRunLoop *mRunLoop;
@@ -84,6 +99,18 @@ typedef enum {
 	
 	id mUserInfo;
 }
+
+#if NS_BLOCKS_AVAILABLE
+
+@property (nonatomic, copy) TCDownloadHandler didBeginHandler;
+@property (nonatomic, copy) TCDownloadHandler didReceiveDataHandler;
+@property (nonatomic, copy) TCDownloadHandler didFinishHandler;
+@property (nonatomic, copy) TCDownloadRedirectHandler shouldRedirectHandler;
+@property (nonatomic, copy) TCDownloadErrorHandler didErrorHandler;
+
+#endif
+
+@property (nonatomic, readonly, retain) id body;
 
 @property (retain) id userInfo;
 @property (retain) id<TCDownloadDelegate> delegate;
@@ -124,4 +151,8 @@ typedef enum {
 -(void)downloadReceivedData;
 -(void)downloadFinished;
 -(BOOL)downloadShouldRedirectToURL:(NSURL *)aURL;
+
+//handles turning data into body
+-(void)parseData;
+
 @end
